@@ -1,0 +1,32 @@
+settings:
+  environmentRemovalStrategy: destroy
+
+environments:
+
+  vpc:
+    name: "VPC & Network"
+    templateName: "demo-vpc"
+    revision: main
+
+  database:
+    name: "Database (RDS)"
+    templateName: "demo-database"
+    revision: main
+    requiresApproval: true
+    needs:
+      - vpc
+
+  eks:
+    name: "EKS Cluster"
+    templateName: "demo-eks"
+    revision: main
+    needs:
+      - vpc
+
+  services:
+    name: "Services & Apps"
+    templateName: "demo-services"
+    revision: main
+    needs:
+      - database
+      - eks
