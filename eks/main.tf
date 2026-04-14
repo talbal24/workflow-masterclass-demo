@@ -39,17 +39,17 @@ variable "public_subnet_id_2" {
 
 variable "kubernetes_version" {
   type    = string
-  default = "1.29"
+  default = "1.31"
 }
 
 variable "node_instance_type" {
   type    = string
-  default = "t3.medium"
+  default = "t3.small"
 }
 
 variable "desired_node_count" {
   type    = number
-  default = 2
+  default = 1
 }
 
 resource "aws_iam_role" "eks_cluster" {
@@ -118,11 +118,11 @@ resource "aws_eks_node_group" "main" {
   subnet_ids      = [var.public_subnet_id, var.public_subnet_id_2]
   instance_types  = [var.node_instance_type]
 
-  scaling_config {
-    desired_size = var.desired_node_count
-    min_size     = 1
-    max_size     = 5
-  }
+scaling_config {
+  desired_size = var.desired_node_count
+  min_size     = 1
+  max_size     = 2
+}
 
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,
