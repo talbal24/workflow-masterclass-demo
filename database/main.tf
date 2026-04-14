@@ -25,10 +25,12 @@ variable "environment_name" {
 # Injected by env zero from vpc sub-environment outputs
 variable "vpc_id" {
   type = string
+  default = ""
 }
 
 variable "private_subnet_id" {
   type = string
+  default = ""
 }
 
 variable "db_instance_class" {
