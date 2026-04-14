@@ -46,7 +46,19 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name        = "${var.environment_name}-public-subnet"
+    Name        = "${var.environment_name}-public-subnet-1"
+    Environment = var.environment_name
+  }
+}
+
+resource "aws_subnet" "public_2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet(var.vpc_cidr, 8, 3)
+  availability_zone       = "${var.aws_region}c"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name        = "${var.environment_name}-public-subnet-2"
     Environment = var.environment_name
   }
 }
@@ -71,16 +83,18 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# These outputs flow into the database and eks templates
-# via env zero variable passing (Environment Output type)
 output "vpc_id" {
   value = aws_vpc.main.id
 }
 
-output "private_subnet_id" {
-  value = aws_subnet.private.id
-}
-
 output "public_subnet_id" {
   value = aws_subnet.public.id
+}
+
+output "public_subnet_id_2" {
+  value = aws_subnet.public_2.id
+}
+
+output "private_subnet_id" {
+  value = aws_subnet.private.id
 }
