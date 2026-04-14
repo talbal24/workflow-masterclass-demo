@@ -25,15 +25,18 @@ variable "environment_name" {
 # Injected by env zero from eks sub-environment outputs
 variable "cluster_endpoint" {
   type = string
+  default = ""
 }
 
 variable "cluster_name" {
-  type = string
+  type = string  
+  default = ""
 }
 
 # Injected by env zero from database sub-environment outputs
 variable "db_endpoint" {
-  type = string
+  type = string 
+  default = ""
 }
 
 variable "app_version" {
