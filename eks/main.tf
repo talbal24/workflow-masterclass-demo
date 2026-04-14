@@ -22,14 +22,18 @@ variable "environment_name" {
   default = "demo"
 }
 
-# Injected by env zero from vpc sub-environment outputs
 variable "vpc_id" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "public_subnet_id" {
-  type = string
+  type    = string
+  default = ""
+}
+
+variable "public_subnet_id_2" {
+  type    = string
   default = ""
 }
 
@@ -43,7 +47,6 @@ variable "node_instance_type" {
   default = "t3.medium"
 }
 
-# DEMO: change this value to trigger a visible plan diff
 variable "desired_node_count" {
   type    = number
   default = 2
@@ -96,7 +99,7 @@ resource "aws_eks_cluster" "main" {
   role_arn = aws_iam_role.eks_cluster.arn
 
   vpc_config {
-    subnet_ids = [var.public_subnet_id]
+    subnet_ids = [var.public_subnet_id, var.public_subnet_id_2]
   }
 
   tags = {
@@ -112,7 +115,7 @@ resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.environment_name}-nodes"
   node_role_arn   = aws_iam_role.eks_nodes.arn
-  subnet_ids      = [var.public_subnet_id]
+  subnet_ids      = [var.public_subnet_id, var.public_subnet_id_2]
   instance_types  = [var.node_instance_type]
 
   scaling_config {
@@ -127,8 +130,6 @@ resource "aws_eks_node_group" "main" {
   ]
 }
 
-# These outputs flow into the services template
-# via env zero variable passing (Environment Output type)
 output "cluster_endpoint" {
   value = aws_eks_cluster.main.endpoint
 }
