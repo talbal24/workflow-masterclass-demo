@@ -37,115 +37,62 @@ variable "public_subnet_id_2" {
   default = ""
 }
 
-variable "kubernetes_version" {
+variable "instance_type" {
   type    = string
-  default = "1.31"
+  default = "t3.micro"
 }
 
-variable "node_instance_type" {
-  type    = string
-  default = "t3.small"
-}
-
+# CD DEMO FIELD: change this to trigger a visible plan diff
 variable "desired_node_count" {
   type    = number
-  default = 1
+  default = 2
 }
 
-resource "aws_iam_role" "eks_cluster" {
-  name = "${var.environment_name}-eks-cluster-role"
+resource "aws_security_group" "app" {
+  name   = "${var.environment_name}-app-sg"
+  vpc_id = var.vpc_id
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action    = "sts:AssumeRole"
-      Effect    = "Allow"
-      Principal = { Service = "eks.amazonaws.com" }
-    }]
-  })
-}
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_cluster.name
-}
-
-resource "aws_iam_role" "eks_nodes" {
-  name = "${var.environment_name}-eks-node-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action    = "sts:AssumeRole"
-      Effect    = "Allow"
-      Principal = { Service = "ec2.amazonaws.com" }
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.eks_nodes.name
-}
-
-resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.eks_nodes.name
-}
-
-resource "aws_iam_role_policy_attachment" "eks_ecr_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.eks_nodes.name
-}
-
-resource "aws_eks_cluster" "main" {
-  name     = "${var.environment_name}-cluster"
-  version  = var.kubernetes_version
-  role_arn = aws_iam_role.eks_cluster.arn
-
-  vpc_config {
-    subnet_ids = [var.public_subnet_id, var.public_subnet_id_2]
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
-    Name        = "${var.environment_name}-cluster"
+    Name        = "${var.environment_name}-app-sg"
     Environment = var.environment_name
     ManagedBy   = "env0"
   }
-
-  depends_on = [aws_iam_role_policy_attachment.eks_cluster_policy]
 }
 
-resource "aws_eks_node_group" "main" {
-  cluster_name    = aws_eks_cluster.main.name
-  node_group_name = "${var.environment_name}-nodes"
-  node_role_arn   = aws_iam_role.eks_nodes.arn
-  subnet_ids      = [var.public_subnet_id, var.public_subnet_id_2]
-  instance_types  = [var.node_instance_type]
-
-  scaling_config {
-    desired_size = var.desired_node_count
-    min_size     = 1
-    max_size     = 2
-  }
+resource "aws_instance" "app" {
+  ami                    = "ami-0c02fb55956c7d316" # Amazon Linux 2, us-east-1
+  instance_type          = var.instance_type
+  subnet_id              = var.public_subnet_id
+  vpc_security_group_ids = [aws_security_group.app.id]
 
   tags = {
-    Name        = "${var.environment_name}-nodes"
-    Environment = var.environment_name
-    ManagedBy   = "env0"
+    Name         = "${var.environment_name}-app-server"
+    Environment  = var.environment_name
+    ManagedBy    = "env0"
+    NodeCount    = var.desired_node_count
   }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.eks_worker_node_policy,
-    aws_iam_role_policy_attachment.eks_cni_policy,
-    aws_iam_role_policy_attachment.eks_ecr_policy,
-  ]
 }
 
+# Outputs consumed by the services template
+# via env zero variable passing
 output "cluster_endpoint" {
-  value = aws_eks_cluster.main.endpoint
+  value = aws_instance.app.public_dns
 }
 
 output "cluster_name" {
-  value = aws_eks_cluster.main.name
+  value = "${var.environment_name}-cluster"
 }
