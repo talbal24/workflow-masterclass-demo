@@ -42,4 +42,5 @@ resource "aws_ssm_parameter" "db_endpoint" {
 # This output flows into the services template
 output "db_endpoint" {
   value = aws_ssm_parameter.db_endpoint.value
+  sensitive = true
 }
