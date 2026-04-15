@@ -93,6 +93,11 @@ resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
   role       = aws_iam_role.eks_nodes.name
 }
 
+resource "aws_iam_role_policy_attachment" "eks_ecr_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = aws_iam_role.eks_nodes.name
+}
+
 resource "aws_eks_cluster" "main" {
   name     = "${var.environment_name}-cluster"
   version  = var.kubernetes_version
@@ -118,15 +123,22 @@ resource "aws_eks_node_group" "main" {
   subnet_ids      = [var.public_subnet_id, var.public_subnet_id_2]
   instance_types  = [var.node_instance_type]
 
-scaling_config {
-  desired_size = var.desired_node_count
-  min_size     = 1
-  max_size     = 2
-}
+  scaling_config {
+    desired_size = var.desired_node_count
+    min_size     = 1
+    max_size     = 2
+  }
+
+  tags = {
+    Name        = "${var.environment_name}-nodes"
+    Environment = var.environment_name
+    ManagedBy   = "env0"
+  }
 
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,
     aws_iam_role_policy_attachment.eks_cni_policy,
+    aws_iam_role_policy_attachment.eks_ecr_policy,
   ]
 }
 
