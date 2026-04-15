@@ -45,7 +45,7 @@ variable "instance_type" {
 # CD DEMO FIELD: change this to trigger a visible plan diff
 variable "desired_node_count" {
   type    = number
-  default = 3
+  default = 4
 }
 
 resource "aws_instance" "app" {
