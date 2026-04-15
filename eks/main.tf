@@ -48,47 +48,19 @@ variable "desired_node_count" {
   default = 2
 }
 
-resource "aws_security_group" "app" {
-  name   = "${var.environment_name}-app-sg"
-  vpc_id = var.vpc_id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_instance" "app" {
+  ami           = "ami-0c02fb55956c7d316"
+  instance_type = var.instance_type
+  subnet_id     = var.public_subnet_id
 
   tags = {
-    Name        = "${var.environment_name}-app-sg"
+    Name        = "${var.environment_name}-app-server"
     Environment = var.environment_name
     ManagedBy   = "env0"
+    NodeCount   = tostring(var.desired_node_count)
   }
 }
 
-resource "aws_instance" "app" {
-  ami                    = "ami-0c02fb55956c7d316" # Amazon Linux 2, us-east-1
-  instance_type          = var.instance_type
-  subnet_id              = var.public_subnet_id
-  vpc_security_group_ids = [aws_security_group.app.id]
-
-  tags = {
-    Name         = "${var.environment_name}-app-server"
-    Environment  = var.environment_name
-    ManagedBy    = "env0"
-    NodeCount    = var.desired_node_count
-  }
-}
-
-# Outputs consumed by the services template
-# via env zero variable passing
 output "cluster_endpoint" {
   value = aws_instance.app.public_dns
 }
